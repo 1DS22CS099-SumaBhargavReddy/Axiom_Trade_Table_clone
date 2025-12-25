@@ -11,6 +11,7 @@ import { TokenTableSkeleton } from './token-table-skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useWallet } from '@/hooks/use-wallet';
 
 type ColumnConfig = {
     key: keyof Token | '#';
@@ -88,6 +89,16 @@ const PercentageCell = ({ value }: { value: number }) => (
 
 const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: number, priceUpdate: PriceUpdate | undefined }) => {
     const IconComponent = token.icon;
+    const { isConnected, account, connect, disconnect } = useWallet();
+
+    const handleConnect = () => {
+        if (isConnected) {
+            disconnect();
+        } else {
+            connect();
+        }
+    };
+    
     return (
         <TableRow className="group">
             <TableCell className="text-center text-muted-foreground">{index + 1}</TableCell>
@@ -117,12 +128,17 @@ const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: num
                         <DialogHeader>
                             <DialogTitle>Trade {token.name} ({token.ticker})</DialogTitle>
                             <DialogDescription>
-                                This is a placeholder for the trading interface.
+                                {isConnected 
+                                    ? `Connected as ${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`
+                                    : "This is a placeholder for the trading interface."
+                                }
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4 space-y-4">
                            <p>Current Price: {formatCurrency(token.price)}</p>
-                           <Button className="w-full" variant="secondary">Connect Wallet</Button>
+                           <Button className="w-full" variant={isConnected ? "destructive" : "secondary"} onClick={handleConnect}>
+                                {isConnected ? 'Disconnect Wallet' : 'Connect Wallet'}
+                           </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
