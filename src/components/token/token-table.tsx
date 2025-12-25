@@ -12,6 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWallet } from '@/hooks/use-wallet';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 type ColumnConfig = {
     key: keyof Token | '#';
@@ -86,10 +88,10 @@ const PercentageCell = ({ value }: { value: number }) => (
     </TableCell>
 );
 
-
-const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: number, priceUpdate: PriceUpdate | undefined }) => {
-    const IconComponent = token.icon;
-    const { isConnected, account, connect, disconnect } = useWallet();
+const TradeDialogContent = ({ token }: { token: Token }) => {
+    const { isConnected, account, connect, disconnect, usdBalance, tokenBalances, executeTrade } = useWallet();
+    const [amount, setAmount] = useState('');
+    const { toast } = useToast();
 
     const handleConnect = () => {
         if (isConnected) {
@@ -98,6 +100,88 @@ const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: num
             connect();
         }
     };
+
+    const handleTrade = (action: 'buy' | 'sell') => {
+        const tradeAmount = parseFloat(amount);
+        if (isNaN(tradeAmount) || tradeAmount <= 0) {
+            toast({
+                variant: 'destructive',
+                title: 'Invalid Amount',
+                description: 'Please enter a valid amount to trade.',
+            });
+            return;
+        }
+
+        try {
+            executeTrade(token.id, tradeAmount, action);
+            toast({
+                title: 'Trade Successful',
+                description: `You have successfully ${action === 'buy' ? 'bought' : 'sold'} ${tradeAmount} ${token.ticker}.`,
+            });
+            setAmount('');
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Trade Failed',
+                description: error.message,
+            });
+        }
+    };
+
+    if (!isConnected) {
+        return (
+            <div className="py-4 space-y-4">
+                <DialogDescription>
+                    Connect your wallet to start trading.
+                </DialogDescription>
+                <Button className="w-full" variant="secondary" onClick={handleConnect}>
+                    Connect Wallet
+                </Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4 pt-2">
+            <div className="text-sm text-muted-foreground">
+                Connected as {account?.substring(0, 6)}...{account?.substring(account.length - 4)}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <div className="text-muted-foreground">USD Balance</div>
+                    <div>{formatCurrency(usdBalance)}</div>
+                </div>
+                <div>
+                    <div className="text-muted-foreground">{token.ticker} Balance</div>
+                    <div>{(tokenBalances[token.id] || 0).toFixed(6)}</div>
+                </div>
+            </div>
+            
+            <div>
+                <Input 
+                    type="number"
+                    placeholder={`Amount of ${token.ticker}`}
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" onClick={() => handleTrade('buy')}>Buy</Button>
+                <Button variant="outline" onClick={() => handleTrade('sell')}>Sell</Button>
+            </div>
+
+            <Button className="w-full" variant="destructive" onClick={handleConnect}>
+                Disconnect Wallet
+            </Button>
+        </div>
+    );
+};
+
+
+const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: number, priceUpdate: PriceUpdate | undefined }) => {
+    const IconComponent = token.icon;
     
     return (
         <TableRow className="group">
@@ -127,19 +211,8 @@ const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: num
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Trade {token.name} ({token.ticker})</DialogTitle>
-                            <DialogDescription>
-                                {isConnected 
-                                    ? `Connected as ${account?.substring(0, 6)}...${account?.substring(account.length - 4)}`
-                                    : "This is a placeholder for the trading interface."
-                                }
-                            </DialogDescription>
                         </DialogHeader>
-                        <div className="py-4 space-y-4">
-                           <p>Current Price: {formatCurrency(token.price)}</p>
-                           <Button className="w-full" variant={isConnected ? "destructive" : "secondary"} onClick={handleConnect}>
-                                {isConnected ? 'Disconnect Wallet' : 'Connect Wallet'}
-                           </Button>
-                        </div>
+                        <TradeDialogContent token={token} />
                     </DialogContent>
                 </Dialog>
             </TableCell>

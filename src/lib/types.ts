@@ -20,3 +20,13 @@ export type SortDescriptor = {
   column: keyof Token | '#' | 'priceChange15m' | 'priceChange1h';
   direction: 'ascending' | 'descending';
 } | null;
+
+export interface WalletContextType {
+  isConnected: boolean;
+  account: string | null;
+  usdBalance: number;
+  tokenBalances: Record<string, number>;
+  connect: () => void;
+  disconnect: () => void;
+  executeTrade: (tokenId: string, amount: number, action: 'buy' | 'sell') => void;
+}
