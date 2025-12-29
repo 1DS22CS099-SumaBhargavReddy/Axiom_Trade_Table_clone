@@ -42,7 +42,6 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous",
       "google.com"
     ]
   },
@@ -65,6 +64,6 @@
         }
       }
     ],
-    "reasoning": "This Firestore structure prioritizes authorization independence and efficient data access for the Axiom Trade Table Clone application. User data is stored under the `/users/{userId}` path, providing clear ownership. Authentication providers are password, anonymous and google.com. The structure is designed to avoid hierarchical authorization dependencies and enables secure list operations. Since there is no collaborative entities, no membership maps were provided."
+    "reasoning": "This Firestore structure prioritizes authorization independence and efficient data access for the Axiom Trade Table Clone application. User data is stored under the `/users/{userId}` path, providing clear ownership. Authentication providers are password and google.com. The structure is designed to avoid hierarchical authorization dependencies and enables secure list operations. Since there is no collaborative entities, no membership maps were provided."
   }
 }
