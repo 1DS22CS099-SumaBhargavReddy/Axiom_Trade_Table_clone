@@ -54,33 +54,58 @@
         "isFinalStretch",
         "isMigrated"
       ]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user profile information.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User's unique ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address."
+        },
+        "country": {
+          "type": "string",
+          "description": "User's country of residence."
+        },
+        "contact": {
+          "type": "string",
+          "description": "User's contact number."
+        },
+        "profilePic": {
+          "type": "string",
+          "description": "URL to the user's profile picture."
+        }
+      },
+      "required": ["id", "name", "email"]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "google.com"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/tokens/{tokenId}",
-        "definition": {
-          "entityName": "Token",
-          "schema": {
-            "$ref": "#/backend/entities/Token"
-          },
-          "description": "Stores token data. Each document represents a token in the trading table.",
-          "params": [
-            {
-              "name": "tokenId",
-              "description": "Unique identifier for the token."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "Given the application requirements for a token trading table, which involves fetching, displaying, and updating token data, including real-time price updates, the following Firestore structure is recommended:\n\nTokens are stored in a single collection called `tokens`. This simplifies querying and displaying the data in a table format.\n\nSince the application uses mock data and doesn't involve user-specific data or collaborative features requiring authentication or authorization rules, a single top-level collection is sufficient.\n\nThis structure prioritizes simplicity and efficiency for the given use case. Authorization Independence is not applicable here as there are no authorization requirements. Segregation is also not relevant because there is only one data type. QAPs are supported since all tokens are stored in a single collection, making listing operations straightforward.\n"
+    "/tokens/{tokenId}": {
+      "schema": {
+        "$ref": "#/entities/Token"
+      },
+      "description": "Stores token data. Each document represents a token in the trading table."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Stores user profile information, linked to their authentication UID."
+    }
   }
 }
