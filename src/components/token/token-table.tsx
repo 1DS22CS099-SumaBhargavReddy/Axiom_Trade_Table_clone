@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartTooltip, ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
 import { useCurrency } from '@/hooks/use-currency';
+import { useRouter } from 'next/navigation';
 
 
 type ColumnConfig = {
@@ -95,18 +96,12 @@ const PercentageCell = ({ value }: { value: number }) => (
 );
 
 const TradeDialogContent = ({ token }: { token: Token }) => {
-    const { isConnected, account, connect, disconnect, usdBalance, tokenBalances, executeTrade } = useWallet();
+    const { isConnected, account, disconnect, usdBalance, tokenBalances, executeTrade } = useWallet();
     const { currency, conversionRate } = useCurrency();
     const [amount, setAmount] = useState('');
     const { toast } = useToast();
+    const router = useRouter();
 
-    const handleConnect = () => {
-        if (isConnected) {
-            disconnect();
-        } else {
-            connect();
-        }
-    };
 
     const handleTrade = (action: 'buy' | 'sell') => {
         const tradeAmount = parseFloat(amount);
@@ -150,7 +145,7 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
                 <DialogDescription>
                     Connect your wallet to start trading.
                 </DialogDescription>
-                <Button className="w-full" variant="secondary" onClick={handleConnect}>
+                <Button className="w-full" variant="secondary" onClick={() => router.push('/login')}>
                     Connect Wallet
                 </Button>
             </div>
@@ -217,7 +212,7 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
                 <Button variant="outline" onClick={() => handleTrade('sell')}>Sell</Button>
             </div>
 
-            <Button className="w-full" variant="destructive" onClick={handleConnect}>
+            <Button className="w-full" variant="destructive" onClick={disconnect}>
                 Disconnect Wallet
             </Button>
         </div>

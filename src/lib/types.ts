@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { User } from "firebase/auth";
 
 export type TokenStatus = 'New pairs' | 'Final Stretch' | 'Migrated';
 
@@ -23,6 +23,7 @@ export type SortDescriptor = {
 } | null;
 
 export type UserProfile = {
+  id: string;
   name: string;
   email: string;
   country: string;
@@ -32,11 +33,12 @@ export type UserProfile = {
 
 export interface WalletContextType {
   isConnected: boolean;
+  isUserLoading: boolean;
   account: string | null;
+  user: User | null;
   usdBalance: number;
   tokenBalances: Record<string, number>;
-  profile: UserProfile;
-  connect: () => void;
+  profile: UserProfile | null;
   disconnect: () => void;
   executeTrade: (tokenId: string, amount: number, action: 'buy' | 'sell') => void;
   updateProfile: (newProfile: Partial<UserProfile>) => void;

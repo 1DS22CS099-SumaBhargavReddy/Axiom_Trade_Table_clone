@@ -1,15 +1,16 @@
 'use client';
 import TokenTable from '@/components/token/token-table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/use-currency';
-import { ChevronsUpDown, User } from 'lucide-react';
+import { ChevronsUpDown, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useWallet } from '@/hooks/use-wallet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -39,7 +40,7 @@ const CurrencySwitcher = () => {
 
 
 export default function Home() {
-  const { profile } = useWallet();
+  const { profile, isConnected, disconnect } = useWallet();
 
   return (
     <div className="p-4 md:p-8">
@@ -48,12 +49,31 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-foreground">Token Discovery</h1>
           <div className="flex items-center gap-4">
             <CurrencySwitcher />
-            <Link href="/profile" passHref>
-              <Avatar className="cursor-pointer">
-                <AvatarImage src={profile.profilePic} alt={profile.name} />
-                <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </Link>
+            {isConnected && profile ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="cursor-pointer">
+                    <AvatarImage src={profile.profilePic} alt={profile.name} />
+                    <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/profile" passHref>
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                  </Link>
+                   <DropdownMenuItem onClick={disconnect}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+            )}
           </div>
         </header>
         <main>

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useRouter } from 'next/navigation';
 
 const countries = [
   { code: 'IN', name: 'India' },
@@ -117,9 +118,10 @@ const PaymentDialog = ({ amount, onPaymentSuccess }: { amount: string; onPayment
 
 
 export default function ProfilePage() {
-  const { profile, updateProfile, usdBalance, addFunds, isConnected, connect } = useWallet();
+  const { profile, updateProfile, usdBalance, addFunds, isConnected, isUserLoading } = useWallet();
   const { currency, conversionRate } = useCurrency();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
@@ -127,18 +129,29 @@ export default function ProfilePage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (!isUserLoading && !isConnected) {
+      router.push('/login');
+    }
+    if (profile) {
+        setEditedProfile(profile);
+    }
+  }, [isConnected, isUserLoading, router, profile]);
+
 
   const handleProfileChange = (field: keyof typeof editedProfile, value: string) => {
-    setEditedProfile(prev => ({ ...prev, [field]: value }));
+    setEditedProfile(prev => ({ ...prev!, [field]: value }));
   };
 
   const handleSaveProfile = () => {
-    updateProfile(editedProfile);
-    setIsEditing(false);
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile information has been saved.',
-    });
+    if (editedProfile) {
+        updateProfile(editedProfile);
+        setIsEditing(false);
+        toast({
+          title: 'Profile Updated',
+          description: 'Your profile information has been saved.',
+        });
+    }
   };
   
   const handleInitiateAddFunds = () => {
@@ -165,7 +178,7 @@ export default function ProfilePage() {
       reader.onload = (e) => {
         const newPic = e.target?.result as string;
         updateProfile({ profilePic: newPic });
-        setEditedProfile(prev => ({...prev, profilePic: newPic}));
+        setEditedProfile(prev => ({...prev!, profilePic: newPic}));
         toast({
           title: 'Avatar Changed!',
           description: 'Your profile picture has been updated.',
@@ -177,16 +190,25 @@ export default function ProfilePage() {
 
   const triggerFileSelect = () => fileInputRef.current?.click();
 
-  if (!isConnected) {
+  if (isUserLoading || !isConnected || !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
-            <CardTitle>Connect Your Wallet</CardTitle>
-            <CardDescription>Please connect your wallet to view your profile.</CardDescription>
+            <CardTitle>Loading Profile...</CardTitle>
+            <CardDescription>Please wait while we fetch your profile.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={connect}>Connect Wallet</Button>
+            <div className="animate-pulse flex space-x-4">
+              <div className="rounded-full bg-muted h-12 w-12"></div>
+              <div className="flex-1 space-y-4 py-1">
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded"></div>
+                  <div className="h-4 bg-muted rounded w-5/6"></div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -214,8 +236,8 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.profilePic} alt={profile.name} />
-                  <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={editedProfile.profilePic} alt={editedProfile.name} />
+                  <AvatarFallback>{editedProfile.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <Input type="file" ref={fileInputRef} onChange={handleAvatarChange} className="hidden" accept="image/*" />
                 <Button variant="outline" size="sm" onClick={triggerFileSelect}>Upload Picture</Button>
@@ -226,7 +248,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={editedProfile.email} onChange={(e) => handleProfileChange('email', e.target.value)} disabled={!isEditing} />
+                <Input id="email" type="email" value={editedProfile.email} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
@@ -288,5 +310,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
