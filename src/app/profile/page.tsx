@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const countries = [
   { code: 'IN', name: 'India' },
@@ -22,6 +24,98 @@ const countries = [
   { code: 'JP', name: 'Japan' },
 ];
 
+const PaymentDialog = ({ amount, onPaymentSuccess }: { amount: string; onPaymentSuccess: (method: 'UPI' | 'Card') => void }) => {
+  const [upiId, setUpiId] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [pin, setPin] = useState('');
+  const [showPinEntry, setShowPinEntry] = useState(false);
+  const [activeTab, setActiveTab] = useState<'UPI' | 'Card'>('UPI');
+  const { toast } = useToast();
+
+  const handlePayment = () => {
+    if (activeTab === 'UPI' && !upiId) {
+      toast({ variant: 'destructive', title: 'Invalid UPI ID', description: 'Please enter a valid UPI ID.' });
+      return;
+    }
+    if (activeTab === 'Card' && (!cardNumber || !expiry || !cvv)) {
+      toast({ variant: 'destructive', title: 'Invalid Card Details', description: 'Please fill in all card details.' });
+      return;
+    }
+    setShowPinEntry(true);
+  };
+
+  const handlePinConfirm = () => {
+    if (pin === '1234') { // Mock PIN
+      onPaymentSuccess(activeTab);
+      setShowPinEntry(false);
+      setPin('');
+    } else {
+      toast({ variant: 'destructive', title: 'Invalid PIN', description: 'The entered PIN is incorrect.' });
+      setPin('');
+    }
+  };
+
+  return (
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Complete Your Payment</DialogTitle>
+        <DialogDescription>
+          You are adding {formatCurrency(parseFloat(amount), useCurrency().currency)} to your wallet.
+        </DialogDescription>
+      </DialogHeader>
+
+      {showPinEntry ? (
+        <div className="space-y-4">
+          <Label htmlFor="pin">Enter 4-digit PIN</Label>
+          <Input
+            id="pin"
+            type="password"
+            maxLength={4}
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            className="text-center text-xl tracking-[1rem]"
+          />
+          <Button onClick={handlePinConfirm} className="w-full">Confirm Payment</Button>
+        </div>
+      ) : (
+        <Tabs defaultValue="UPI" onValueChange={(value) => setActiveTab(value as 'UPI' | 'Card')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="UPI">UPI</TabsTrigger>
+            <TabsTrigger value="Card">Card</TabsTrigger>
+          </TabsList>
+          <TabsContent value="UPI" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="upiId">UPI ID</Label>
+              <Input id="upiId" placeholder="yourname@bank" value={upiId} onChange={(e) => setUpiId(e.target.value)} />
+            </div>
+            <Button onClick={handlePayment} className="w-full">Pay with UPI</Button>
+          </TabsContent>
+          <TabsContent value="Card" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="cardNumber">Card Number</Label>
+              <Input id="cardNumber" placeholder="0000 0000 0000 0000" value={cardNumber} onChange={(e) => setCardNumber(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="expiry">Expiry</Label>
+                <Input id="expiry" placeholder="MM/YY" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cvv">CVV</Label>
+                <Input id="cvv" placeholder="123" value={cvv} onChange={(e) => setCvv(e.target.value)} />
+              </div>
+            </div>
+            <Button onClick={handlePayment} className="w-full">Pay with Card</Button>
+          </TabsContent>
+        </Tabs>
+      )}
+    </DialogContent>
+  );
+};
+
+
 export default function ProfilePage() {
   const { profile, updateProfile, usdBalance, addFunds, isConnected, connect } = useWallet();
   const { currency, conversionRate } = useCurrency();
@@ -30,6 +124,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
   const [amountToAdd, setAmountToAdd] = useState('');
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -45,16 +140,22 @@ export default function ProfilePage() {
       description: 'Your profile information has been saved.',
     });
   };
-
-  const handleAddFunds = (method: 'UPI' | 'Card') => {
+  
+  const handleInitiateAddFunds = () => {
     const amount = parseFloat(amountToAdd);
-    if (isNaN(amount) || amount <= 0) {
-      toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.' });
+     if (isNaN(amount) || amount <= 0) {
+      toast({ variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount to add.' });
       return;
     }
+    setIsPaymentDialogOpen(true);
+  }
+
+  const handlePaymentSuccess = (method: 'UPI' | 'Card') => {
+    const amount = parseFloat(amountToAdd);
     addFunds(amount / conversionRate); // Convert to USD before adding
     toast({ title: 'Funds Added', description: `${formatCurrency(amount, currency)} has been added to your wallet via ${method}.` });
     setAmountToAdd('');
+    setIsPaymentDialogOpen(false);
   };
   
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,10 +273,14 @@ export default function ProfilePage() {
                   onChange={(e) => setAmountToAdd(e.target.value)}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <Button onClick={() => handleAddFunds('UPI')}>Add via UPI</Button>
-                <Button onClick={() => handleAddFunds('Card')}>Add via Card</Button>
-              </div>
+              <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button className="w-full" onClick={handleInitiateAddFunds}>Add Funds</Button>
+                </DialogTrigger>
+                {amountToAdd && (
+                  <PaymentDialog amount={amountToAdd} onPaymentSuccess={handlePaymentSuccess} />
+                )}
+              </Dialog>
             </CardContent>
           </Card>
         </main>
@@ -183,3 +288,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
