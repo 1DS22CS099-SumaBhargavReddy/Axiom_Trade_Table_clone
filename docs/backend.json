@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Axiom Trade Table Clone application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the user."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the user."
+        },
+        "signupDate": {
+          "type": "string",
+          "description": "The date and time the user signed up.",
+          "format": "date-time"
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "The date and time the user last logged in.",
+          "format": "date-time"
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The unique identifier from Google, if the user signed up with Google."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "signupDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "user",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership ensures only the authenticated user can access their own profile data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, obtained from Firebase Authentication."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure prioritizes authorization independence and efficient data access for the Axiom Trade Table Clone application. User data is stored under the `/users/{userId}` path, providing clear ownership. Authentication providers are password and anonymous. The structure is designed to avoid hierarchical authorization dependencies and enables secure list operations. Since there is no collaborative entities, no membership maps were provided."
+  }
+}

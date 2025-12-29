@@ -1,0 +1,84 @@
+/**
+ * This ruleset enforces a strict user-ownership model for the Axiom Trade Table Clone application.
+ * Its core philosophy is that users should have complete control over their own data, and no
+ * access to anyone else's data.
+ *
+ * Data Structure:
+ * All user-specific data is stored in a top-level `users` collection. Each user's
+ * profile document is identified by their unique Firebase Authentication UID.
+ *   - /users/{userId}: A user's profile document.
+ *
+ * Key Security Decisions:
+ * - User Privacy: Listing the entire `/users` collection is explicitly forbidden to prevent
+ *   any user from discovering the identities of other users on the platform.
+ * - Strict Ownership: All read and write operations on a user's profile document are restricted
+ *   to the authenticated user who owns that document.
+ * - Path & Data Consistency: On creation, the rules enforce that the `id` field within the user
+ *   document must match the document's ID (`userId`), ensuring data integrity from the start. This
+ *   field is then made immutable on update.
+ * - Default Deny: Any path not explicitly matched is denied access by default.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user making the request is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the currently authenticated user's UID matches the provided userId.
+     * This is the foundation of the user ownership model.
+     * @param userId The UID to check against the request's authentication.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    /**
+     * Checks for ownership on an existing document. Used for safe updates and deletes.
+     * Prevents modifying or deleting a document that doesn't exist.
+     * @param userId The UID of the resource owner.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents.
+     * @path /users/{userId}
+     * @allow (get) An authenticated user can read their own profile.
+     *   - auth: { uid: 'user123' }
+     *   - path: /users/user123
+     * @allow (create) A new user can create their own profile document.
+     *   - auth: { uid: 'user123' }
+     *   - path: /users/user123
+     *   - data: { id: 'user123', email: 'a@b.com', ... }
+     * @deny (get) A user cannot read another user's profile.
+     *   - auth: { uid: 'user123' }
+     *   - path: /users/user456
+     * @deny (list) No user can list all documents in the `/users` collection.
+     *   - auth: { uid: 'user123' }
+     *   - path: /users
+     * @principle Restricts access to a user's own data tree and enforces relational integrity.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
