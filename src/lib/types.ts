@@ -22,12 +22,23 @@ export type SortDescriptor = {
   direction: 'ascending' | 'descending';
 } | null;
 
+export type UserProfile = {
+  name: string;
+  email: string;
+  country: string;
+  contact: string;
+  profilePic: string;
+};
+
 export interface WalletContextType {
   isConnected: boolean;
   account: string | null;
   usdBalance: number;
   tokenBalances: Record<string, number>;
+  profile: UserProfile;
   connect: () => void;
   disconnect: () => void;
   executeTrade: (tokenId: string, amount: number, action: 'buy' | 'sell') => void;
+  updateProfile: (newProfile: Partial<UserProfile>) => void;
+  addFunds: (amount: number) => void;
 }

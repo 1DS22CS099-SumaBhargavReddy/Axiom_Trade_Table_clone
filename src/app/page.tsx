@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/use-currency';
-import { ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, User } from 'lucide-react';
+import Link from 'next/link';
 
 const CurrencySwitcher = () => {
   const { currency, setCurrency, currencies } = useCurrency();
@@ -41,7 +42,14 @@ export default function Home() {
       <div className="w-full max-w-screen-xl mx-auto">
         <header className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Token Discovery</h1>
-          <CurrencySwitcher />
+          <div className="flex items-center gap-4">
+            <CurrencySwitcher />
+            <Link href="/profile" passHref>
+              <Button variant="ghost" size="icon">
+                <User />
+              </Button>
+            </Link>
+          </div>
         </header>
         <main>
           <TokenTable />

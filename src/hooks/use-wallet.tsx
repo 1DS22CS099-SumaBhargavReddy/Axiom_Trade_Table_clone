@@ -2,15 +2,25 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { initialTokens } from '@/lib/data';
-import type { WalletContextType } from '@/lib/types';
+import type { WalletContextType, UserProfile } from '@/lib/types';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+const initialProfile: UserProfile = {
+  name: 'Satoshi Nakamoto',
+  email: 'satoshi@example.com',
+  country: 'JP',
+  contact: '+81 123-456-7890',
+  profilePic: 'https://i.pravatar.cc/150?u=satoshi',
+};
+
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState<string | null>(null);
   const [usdBalance, setUsdBalance] = useState(0);
   const [tokenBalances, setTokenBalances] = useState<Record<string, number>>({});
+  const [profile, setProfile] = useState<UserProfile>(initialProfile);
 
   const connect = useCallback(() => {
     const mockAccount = '0x' + Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
@@ -65,8 +75,16 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [usdBalance, tokenBalances]);
 
+  const updateProfile = useCallback((newProfile: Partial<UserProfile>) => {
+    setProfile(prev => ({ ...prev, ...newProfile }));
+  }, []);
+
+  const addFunds = useCallback((amount: number) => {
+    setUsdBalance(prev => prev + amount);
+  }, []);
+
   return (
-    <WalletContext.Provider value={{ isConnected, account, usdBalance, tokenBalances, connect, disconnect, executeTrade }}>
+    <WalletContext.Provider value={{ isConnected, account, usdBalance, tokenBalances, profile, connect, disconnect, executeTrade, updateProfile, addFunds }}>
       {children}
     </WalletContext.Provider>
   );
