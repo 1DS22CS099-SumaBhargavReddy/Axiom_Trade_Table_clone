@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState(profile);
   const [amountToAdd, setAmountToAdd] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const handleProfileChange = (field: keyof typeof editedProfile, value: string) => {
     setEditedProfile(prev => ({ ...prev, [field]: value }));
@@ -55,16 +57,24 @@ export default function ProfilePage() {
     setAmountToAdd('');
   };
   
-  const handleAvatarChange = () => {
-    const newId = `user${Date.now()}`;
-    const newPic = `https://i.pravatar.cc/150?u=${newId}`;
-    updateProfile({ profilePic: newPic });
-    setEditedProfile(prev => ({ ...prev, profilePic: newPic }));
-     toast({
-      title: 'Avatar Changed!',
-      description: 'Your profile picture has been updated.',
-    });
-  }
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const newPic = e.target?.result as string;
+        updateProfile({ profilePic: newPic });
+        setEditedProfile(prev => ({...prev, profilePic: newPic}));
+        toast({
+          title: 'Avatar Changed!',
+          description: 'Your profile picture has been updated.',
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileSelect = () => fileInputRef.current?.click();
 
   if (!isConnected) {
     return (
@@ -106,7 +116,8 @@ export default function ProfilePage() {
                   <AvatarImage src={profile.profilePic} alt={profile.name} />
                   <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <Button variant="outline" size="sm" onClick={handleAvatarChange}>Change Picture</Button>
+                <Input type="file" ref={fileInputRef} onChange={handleAvatarChange} className="hidden" accept="image/*" />
+                <Button variant="outline" size="sm" onClick={triggerFileSelect}>Upload Picture</Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>

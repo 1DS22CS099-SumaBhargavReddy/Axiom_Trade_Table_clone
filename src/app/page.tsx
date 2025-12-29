@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { useCurrency } from '@/hooks/use-currency';
 import { ChevronsUpDown, User } from 'lucide-react';
 import Link from 'next/link';
+import { useWallet } from '@/hooks/use-wallet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const CurrencySwitcher = () => {
   const { currency, setCurrency, currencies } = useCurrency();
@@ -37,6 +39,8 @@ const CurrencySwitcher = () => {
 
 
 export default function Home() {
+  const { profile } = useWallet();
+
   return (
     <div className="p-4 md:p-8">
       <div className="w-full max-w-screen-xl mx-auto">
@@ -45,9 +49,10 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <CurrencySwitcher />
             <Link href="/profile" passHref>
-              <Button variant="ghost" size="icon">
-                <User />
-              </Button>
+              <Avatar className="cursor-pointer">
+                <AvatarImage src={profile.profilePic} alt={profile.name} />
+                <AvatarFallback>{profile.name.charAt(0)}</AvatarFallback>
+              </Avatar>
             </Link>
           </div>
         </header>
