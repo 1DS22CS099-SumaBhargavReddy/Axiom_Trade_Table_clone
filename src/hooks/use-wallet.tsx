@@ -40,6 +40,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     const token = initialTokens.find(t => t.id === tokenId);
     if (!token) throw new Error("Token not found");
 
+    // All internal logic uses USD as the base currency
     const tradeValue = amount * token.price;
 
     if (action === 'buy') {

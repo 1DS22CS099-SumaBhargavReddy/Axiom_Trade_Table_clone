@@ -5,26 +5,28 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number) {
+export function formatCurrency(amount: number, currency: string = "USD") {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: currency,
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: currency === 'INR' ? 2 : (amount < 1 ? 6 : 2),
   }).format(amount);
 }
 
-export function formatCompactCurrency(amount: number) {
+export function formatCompactCurrency(amount: number, currency: string = "USD") {
+    const currencySymbol = new Intl.NumberFormat("en-US", { style: 'currency', currency: currency }).formatToParts(1).find(p => p.type === 'currency')?.value || '$';
+
     if (amount >= 1e9) {
-        return `$${(amount / 1e9).toFixed(2)}B`;
+        return `${currencySymbol}${(amount / 1e9).toFixed(2)}B`;
     }
     if (amount >= 1e6) {
-        return `$${(amount / 1e6).toFixed(2)}M`;
+        return `${currencySymbol}${(amount / 1e6).toFixed(2)}M`;
     }
     if (amount >= 1e3) {
-        return `$${(amount / 1e3).toFixed(1)}K`;
+        return `${currencySymbol}${(amount / 1e3).toFixed(1)}K`;
     }
-    return `$${amount.toFixed(2)}`;
+    return `${currencySymbol}${amount.toFixed(2)}`;
 }
 
 export function formatPercentage(value: number) {

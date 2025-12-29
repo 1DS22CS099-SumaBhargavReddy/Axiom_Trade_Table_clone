@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
 import { ChartTooltip, ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
+import { useCurrency } from '@/hooks/use-currency';
 
 
 type ColumnConfig = {
@@ -69,6 +70,8 @@ const SortableHeader = ({ column, sortDescriptor, onSort }: { column: ColumnConf
 
 const PriceCell = ({ price, update }: { price: number; update: PriceUpdate | undefined }) => {
   const [priceChange, setPriceChange] = useState<'up' | 'down' | null>(null);
+  const { currency, conversionRate } = useCurrency();
+  const convertedPrice = price * conversionRate;
 
   useEffect(() => {
     if (update) {
@@ -80,7 +83,7 @@ const PriceCell = ({ price, update }: { price: number; update: PriceUpdate | und
 
   return (
     <TableCell data-price-change={priceChange}>
-      {formatCurrency(price)}
+      {formatCurrency(convertedPrice, currency)}
     </TableCell>
   );
 };
@@ -93,6 +96,7 @@ const PercentageCell = ({ value }: { value: number }) => (
 
 const TradeDialogContent = ({ token }: { token: Token }) => {
     const { isConnected, account, connect, disconnect, usdBalance, tokenBalances, executeTrade } = useWallet();
+    const { currency, conversionRate } = useCurrency();
     const [amount, setAmount] = useState('');
     const { toast } = useToast();
 
@@ -137,6 +141,8 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
         color: 'hsl(var(--accent))',
       },
     };
+    
+    const chartData = token.priceHistory.map(d => ({ ...d, price: d.price * conversionRate }));
 
     if (!isConnected) {
         return (
@@ -155,7 +161,7 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
         <div className="space-y-4 pt-2">
             <div className="h-48">
               <ChartContainer config={chartConfig} className="h-full w-full">
-                <AreaChart data={token.priceHistory} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
                     <defs>
                         <linearGradient id="fillPrice" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
@@ -168,7 +174,7 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
                     cursor={false}
                     content={<ChartTooltipContent 
                       indicator="line" 
-                      formatter={(value) => formatCurrency(value as number)}
+                      formatter={(value) => formatCurrency(value as number, currency)}
                     />}
                   />
                   <Area
@@ -188,8 +194,8 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
 
             <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                    <div className="text-muted-foreground">USD Balance</div>
-                    <div>{formatCurrency(usdBalance)}</div>
+                    <div className="text-muted-foreground">Balance</div>
+                    <div>{formatCurrency(usdBalance * conversionRate, currency)}</div>
                 </div>
                 <div>
                     <div className="text-muted-foreground">{token.ticker} Balance</div>
@@ -221,6 +227,7 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
 
 const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: number, priceUpdate: PriceUpdate | undefined }) => {
     const IconComponent = token.icon;
+    const { currency, conversionRate } = useCurrency();
     
     return (
         <TableRow className="group">
@@ -237,8 +244,8 @@ const TokenRow = memo(({ token, index, priceUpdate }: { token: Token; index: num
             <PriceCell price={token.price} update={priceUpdate} />
             <PercentageCell value={token.priceChange15m} />
             <PercentageCell value={token.priceChange1h} />
-            <TableCell>{formatCompactCurrency(token.volume)}</TableCell>
-            <TableCell>{formatCompactCurrency(token.liquidity)}</TableCell>
+            <TableCell>{formatCompactCurrency(token.volume * conversionRate, currency)}</TableCell>
+            <TableCell>{formatCompactCurrency(token.liquidity * conversionRate, currency)}</TableCell>
             <TableCell>{formatDuration(token.onChain)}</TableCell>
             <TableCell className="text-right">
                 <Dialog>

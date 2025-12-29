@@ -7,14 +7,14 @@ export type Token = {
   name: string;
   ticker: string;
   icon: ((props: React.ComponentProps<'svg'>) => JSX.Element);
-  price: number;
+  price: number; // Always in USD
   priceChange15m: number;
   priceChange1h: number;
-  volume: number;
-  liquidity: number;
+  volume: number; // Always in USD
+  liquidity: number; // Always in USD
   onChain: number; // age in minutes
   status: TokenStatus;
-  priceHistory: { time: number; price: number }[];
+  priceHistory: { time: number; price: number }[]; // prices in USD
 };
 
 export type SortDescriptor = {
