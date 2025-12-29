@@ -4,6 +4,16 @@ import type { Token } from "./types";
 
 const random = (min: number, max: number) => Math.random() * (max - min) + min;
 
+const generatePriceHistory = (basePrice: number, points = 30) => {
+  const history = [];
+  let currentPrice = basePrice * (1 + random(-0.1, 0.1));
+  for (let i = 0; i < points; i++) {
+    history.push({ time: Date.now() - (points - i) * 60000, price: currentPrice });
+    currentPrice *= (1 + random(-0.01, 0.01));
+  }
+  return history;
+};
+
 export const initialTokens: Token[] = [
   // Migrated
   {
@@ -18,6 +28,7 @@ export const initialTokens: Token[] = [
     liquidity: 5_000_000_000,
     onChain: 788400,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(2885.00),
   },
   {
     id: "tcs",
@@ -31,6 +42,7 @@ export const initialTokens: Token[] = [
     liquidity: 4_000_000_000,
     onChain: 475200,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(3820.75),
   },
   {
     id: "usdc",
@@ -44,6 +56,7 @@ export const initialTokens: Token[] = [
     liquidity: 30_000_000_000,
     onChain: 315360,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(1.00),
   },
   {
     id: "hul",
@@ -57,6 +70,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_500_000_000,
     onChain: 604800,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(2540.00),
   },
   {
     id: "sbi",
@@ -70,6 +84,7 @@ export const initialTokens: Token[] = [
     liquidity: 6_000_000_000,
     onChain: 518400,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(750.00),
   },
   {
     id: "lt",
@@ -83,6 +98,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_000_000_000,
     onChain: 432000,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(3600.00),
   },
   {
     id: "axis",
@@ -96,6 +112,7 @@ export const initialTokens: Token[] = [
     liquidity: 3_500_000_000,
     onChain: 345600,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(1100.00),
   },
   {
     id: "maruti",
@@ -109,6 +126,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_800_000_000,
     onChain: 259200,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(12500.00),
   },
   {
     id: "wipro",
@@ -122,6 +140,7 @@ export const initialTokens: Token[] = [
     liquidity: 1_800_000_000,
     onChain: 172800,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(480.00),
   },
   {
     id: "asianpaint",
@@ -135,6 +154,7 @@ export const initialTokens: Token[] = [
     liquidity: 1_500_000_000,
     onChain: 86400,
     status: 'Migrated',
+    priceHistory: generatePriceHistory(2900.00),
   },
 
   // Final Stretch
@@ -150,6 +170,7 @@ export const initialTokens: Token[] = [
     liquidity: 3_000_000_000,
     onChain: 25,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(1530.50),
   },
   {
     id: 'pepe',
@@ -163,6 +184,7 @@ export const initialTokens: Token[] = [
     liquidity: 400_000_000,
     onChain: 45,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(0.0000115),
   },
   {
     id: "bonk",
@@ -176,6 +198,7 @@ export const initialTokens: Token[] = [
     liquidity: 150_000_000,
     onChain: 120,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(0.000028),
   },
   {
     id: "wif",
@@ -189,6 +212,7 @@ export const initialTokens: Token[] = [
     liquidity: 200_000_000,
     onChain: 90,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(2.50),
   },
   {
     id: 'bhartiairtel',
@@ -202,6 +226,7 @@ export const initialTokens: Token[] = [
     liquidity: 4_000_000_000,
     onChain: 30,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(1200.00),
   },
   {
     id: 'kotak',
@@ -215,6 +240,7 @@ export const initialTokens: Token[] = [
     liquidity: 3_200_000_000,
     onChain: 50,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(1750.00),
   },
   {
     id: 'itc',
@@ -228,6 +254,7 @@ export const initialTokens: Token[] = [
     liquidity: 4_500_000_000,
     onChain: 60,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(430.00),
   },
   {
     id: 'bajfinance',
@@ -241,6 +268,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_900_000_000,
     onChain: 75,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(7200.00),
   },
   {
     id: 'hcltech',
@@ -254,6 +282,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_200_000_000,
     onChain: 100,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(1450.00),
   },
   {
     id: 'titan',
@@ -267,6 +296,7 @@ export const initialTokens: Token[] = [
     liquidity: 1_900_000_000,
     onChain: 110,
     status: 'Final Stretch',
+    priceHistory: generatePriceHistory(3500.00),
   },
 
   // New pairs
@@ -282,6 +312,7 @@ export const initialTokens: Token[] = [
     liquidity: 8_000_000_000,
     onChain: 15,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(1675.25),
   },
   {
     id: 'icici',
@@ -295,6 +326,7 @@ export const initialTokens: Token[] = [
     liquidity: 7_000_000_000,
     onChain: 5,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(1125.80),
   },
   {
     id: "weth",
@@ -308,6 +340,7 @@ export const initialTokens: Token[] = [
     liquidity: 900_000_000,
     onChain: 2,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(3560.05),
   },
   {
     id: 'sunpharma',
@@ -321,6 +354,7 @@ export const initialTokens: Token[] = [
     liquidity: 1_800_000_000,
     onChain: 3,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(1500.00),
   },
   {
     id: 'bajajfinsv',
@@ -334,6 +368,7 @@ export const initialTokens: Token[] = [
     liquidity: 1_200_000_000,
     onChain: 4,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(1600.00),
   },
   {
     id: 'mahindra',
@@ -347,6 +382,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_400_000_000,
     onChain: 6,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(2500.00),
   },
   {
     id: 'tatamotors',
@@ -360,6 +396,7 @@ export const initialTokens: Token[] = [
     liquidity: 5_200_000_000,
     onChain: 8,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(950.00),
   },
   {
     id: 'ntpc',
@@ -373,6 +410,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_800_000_000,
     onChain: 10,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(360.00),
   },
   {
     id: 'powergrid',
@@ -386,6 +424,7 @@ export const initialTokens: Token[] = [
     liquidity: 2_600_000_000,
     onChain: 12,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(325.00),
   },
   {
     id: 'ultratech',
@@ -399,6 +438,7 @@ export const initialTokens: Token[] = [
     liquidity: 1_400_000_000,
     onChain: 14,
     status: 'New pairs',
+    priceHistory: generatePriceHistory(10800.00),
   },
 ];
 
@@ -406,10 +446,16 @@ export const generateRealtimeUpdate = (token: Token): Partial<Token> => {
   const priceChangeFactor = random(-0.005, 0.005);
   const newPrice = token.price * (1 + priceChangeFactor);
 
+  const newPriceHistory = [
+    ...token.priceHistory.slice(1),
+    { time: Date.now(), price: newPrice },
+  ];
+
   return {
     price: newPrice,
     priceChange15m: token.priceChange15m + random(-0.1, 0.1),
     priceChange1h: token.priceChange1h + random(-0.2, 0.2),
     volume: token.volume + random(-10000, 10000),
+    priceHistory: newPriceHistory,
   };
 };

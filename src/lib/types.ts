@@ -14,6 +14,7 @@ export type Token = {
   liquidity: number;
   onChain: number; // age in minutes
   status: TokenStatus;
+  priceHistory: { time: number; price: number }[];
 };
 
 export type SortDescriptor = {

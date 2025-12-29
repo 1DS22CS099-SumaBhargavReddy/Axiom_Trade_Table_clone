@@ -14,6 +14,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useWallet } from '@/hooks/use-wallet';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from 'recharts';
+import { ChartTooltip, ChartTooltipContent, ChartContainer } from '@/components/ui/chart';
+
 
 type ColumnConfig = {
     key: keyof Token | '#';
@@ -127,6 +130,13 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
             });
         }
     };
+    
+    const chartConfig = {
+      price: {
+        label: 'Price',
+        color: 'hsl(var(--accent))',
+      },
+    };
 
     if (!isConnected) {
         return (
@@ -143,6 +153,35 @@ const TradeDialogContent = ({ token }: { token: Token }) => {
 
     return (
         <div className="space-y-4 pt-2">
+            <div className="h-48">
+              <ChartContainer config={chartConfig} className="h-full w-full">
+                <AreaChart data={token.priceHistory} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                    <defs>
+                        <linearGradient id="fillPrice" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.1}/>
+                        </linearGradient>
+                    </defs>
+                  <XAxis dataKey="time" hide />
+                  <YAxis domain={['dataMin', 'dataMax']} hide />
+                  <RechartsTooltip 
+                    cursor={false}
+                    content={<ChartTooltipContent 
+                      indicator="line" 
+                      formatter={(value) => formatCurrency(value as number)}
+                    />}
+                  />
+                  <Area
+                    dataKey="price"
+                    type="natural"
+                    fill="url(#fillPrice)"
+                    stroke="hsl(var(--accent))"
+                    stackId="a"
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </div>
+
             <div className="text-sm text-muted-foreground">
                 Connected as {account?.substring(0, 6)}...{account?.substring(account.length - 4)}
             </div>
