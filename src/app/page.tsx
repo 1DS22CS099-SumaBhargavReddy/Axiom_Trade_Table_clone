@@ -1,4 +1,6 @@
 'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import TokenTable from '@/components/token/token-table';
 import {
   DropdownMenu,
@@ -14,6 +16,7 @@ import { ChevronsUpDown, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { useWallet } from '@/hooks/use-wallet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CurrencySwitcher = () => {
   const { currency, setCurrency, currencies } = useCurrency();
@@ -40,7 +43,35 @@ const CurrencySwitcher = () => {
 
 
 export default function Home() {
-  const { profile, isConnected, disconnect } = useWallet();
+  const { profile, isConnected, disconnect, isUserLoading } = useWallet();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !isConnected) {
+      router.push('/login');
+    }
+  }, [isUserLoading, isConnected, router]);
+
+  if (isUserLoading || !isConnected) {
+    return (
+       <div className="p-4 md:p-8">
+        <div className="w-full max-w-screen-xl mx-auto">
+          <header className="mb-6 flex justify-between items-center">
+            <Skeleton className="h-9 w-64" />
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-28" />
+              <Skeleton className="h-10 w-10 rounded-full" />
+            </div>
+          </header>
+          <main>
+             <div className="text-center py-16 text-muted-foreground border rounded-lg">
+                <p>Loading your trading experience...</p>
+             </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8">
@@ -49,7 +80,7 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-foreground">Token Discovery</h1>
           <div className="flex items-center gap-4">
             <CurrencySwitcher />
-            {isConnected && profile ? (
+            {profile ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="cursor-pointer">
@@ -70,9 +101,7 @@ export default function Home() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild>
-                <Link href="/login">Login</Link>
-              </Button>
+               <Skeleton className="h-10 w-10 rounded-full" />
             )}
           </div>
         </header>
