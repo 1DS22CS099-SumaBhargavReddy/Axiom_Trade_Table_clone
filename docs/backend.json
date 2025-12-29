@@ -1,69 +1,86 @@
 {
   "entities": {
-    "User": {
+    "Token": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
+      "title": "Token",
       "type": "object",
-      "description": "Represents a user of the Axiom Trade Table Clone application.",
+      "description": "Represents a token in the trading table.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the user entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the user.",
-          "format": "email"
+          "description": "Unique identifier for the token."
         },
         "name": {
           "type": "string",
-          "description": "The name of the user."
+          "description": "Name of the token."
         },
-        "profilePic": {
+        "symbol": {
           "type": "string",
-          "description": "URL of the user's profile picture."
+          "description": "Symbol of the token (e.g., BTC, ETH)."
         },
-        "country": {
-            "type": "string",
-            "description": "The user's country."
+        "price": {
+          "type": "number",
+          "description": "Current price of the token."
         },
-        "contact": {
-            "type": "string",
-            "description": "The user's contact number."
+        "dailyChange": {
+          "type": "number",
+          "description": "The amount the token price has changed in the last 24 hours."
+        },
+        "dailyVolume": {
+          "type": "number",
+          "description": "The amount of the token that has been traded in the last 24 hours."
+        },
+        "isNewPair": {
+          "type": "boolean",
+          "description": "Indicates if the token is a new pair."
+        },
+        "isFinalStretch": {
+          "type": "boolean",
+          "description": "Indicates if the token is in its final stretch."
+        },
+        "isMigrated": {
+          "type": "boolean",
+          "description": "Indicates if the token has been migrated."
         }
       },
       "required": [
         "id",
-        "email",
-        "name"
+        "name",
+        "symbol",
+        "price",
+        "dailyChange",
+        "dailyVolume",
+        "isNewPair",
+        "isFinalStretch",
+        "isMigrated"
       ]
     }
   },
   "auth": {
     "providers": [
       "password",
-      "google.com"
+      "anonymous"
     ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}",
+        "path": "/tokens/{tokenId}",
         "definition": {
-          "entityName": "user",
+          "entityName": "Token",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/backend/entities/Token"
           },
-          "description": "Stores user profiles. Path-based ownership ensures only the authenticated user can access their own profile data.",
+          "description": "Stores token data. Each document represents a token in the trading table.",
           "params": [
             {
-              "name": "userId",
-              "description": "The unique identifier of the user, obtained from Firebase Authentication."
+              "name": "tokenId",
+              "description": "Unique identifier for the token."
             }
           ]
         }
       }
     ],
-    "reasoning": "This Firestore structure prioritizes authorization independence and efficient data access for the Axiom Trade Table Clone application. User data is stored under the `/users/{userId}` path, providing clear ownership. Authentication providers are password and google.com. The structure is designed to avoid hierarchical authorization dependencies and enables secure list operations. Since there is no collaborative entities, no membership maps were provided."
+    "reasoning": "Given the application requirements for a token trading table, which involves fetching, displaying, and updating token data, including real-time price updates, the following Firestore structure is recommended:\n\nTokens are stored in a single collection called `tokens`. This simplifies querying and displaying the data in a table format.\n\nSince the application uses mock data and doesn't involve user-specific data or collaborative features requiring authentication or authorization rules, a single top-level collection is sufficient.\n\nThis structure prioritizes simplicity and efficiency for the given use case. Authorization Independence is not applicable here as there are no authorization requirements. Segregation is also not relevant because there is only one data type. QAPs are supported since all tokens are stored in a single collection, making listing operations straightforward.\n"
   }
 }
