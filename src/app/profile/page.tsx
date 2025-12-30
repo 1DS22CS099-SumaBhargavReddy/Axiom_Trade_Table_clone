@@ -1,7 +1,7 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -118,42 +118,20 @@ const PaymentDialog = ({ amount, onPaymentSuccess }: { amount: string; onPayment
 
 
 export default function ProfilePage() {
-  const { profile, updateProfile, usdBalance, addFunds, isConnected, isUserLoading } = useWallet();
+  const { profile, usdBalance, addFunds, isConnected, isUserLoading } = useWallet();
   const { currency, conversionRate } = useCurrency();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState(profile);
   const [amountToAdd, setAmountToAdd] = useState('');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !isConnected) {
       router.push('/login');
     }
-    if (profile) {
-        setEditedProfile(profile);
-    }
   }, [isConnected, isUserLoading, router, profile]);
 
-
-  const handleProfileChange = (field: keyof typeof editedProfile, value: string) => {
-    setEditedProfile(prev => ({ ...prev!, [field]: value }));
-  };
-
-  const handleSaveProfile = () => {
-    if (editedProfile) {
-        updateProfile(editedProfile);
-        setIsEditing(false);
-        toast({
-          title: 'Profile Updated',
-          description: 'Your profile information has been saved.',
-        });
-    }
-  };
-  
   const handleInitiateAddFunds = () => {
     const amount = parseFloat(amountToAdd);
      if (isNaN(amount) || amount <= 0) {
@@ -171,25 +149,6 @@ export default function ProfilePage() {
     setIsPaymentDialogOpen(false);
   };
   
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const newPic = e.target?.result as string;
-        updateProfile({ profilePic: newPic });
-        setEditedProfile(prev => ({...prev!, profilePic: newPic}));
-        toast({
-          title: 'Avatar Changed!',
-          description: 'Your profile picture has been updated.',
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const triggerFileSelect = () => fileInputRef.current?.click();
-
   if (isUserLoading || !isConnected || !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
@@ -231,28 +190,26 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <CardTitle>Your Profile</CardTitle>
-              <CardDescription>View and edit your personal information.</CardDescription>
+              <CardDescription>View your personal information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={editedProfile.profilePic} alt={editedProfile.name} />
-                  <AvatarFallback>{editedProfile.name?.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={profile.profilePic} alt={profile.name} />
+                  <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <Input type="file" ref={fileInputRef} onChange={handleAvatarChange} className="hidden" accept="image/*" />
-                <Button variant="outline" size="sm" onClick={triggerFileSelect}>Upload Picture</Button>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" value={editedProfile.name} onChange={(e) => handleProfileChange('name', e.target.value)} disabled={!isEditing} />
+                <Input id="name" value={profile.name} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={editedProfile.email} disabled />
+                <Input id="email" type="email" value={profile.email} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Select value={editedProfile.country} onValueChange={(value) => handleProfileChange('country', value)} disabled={!isEditing}>
+                <Select value={profile.country} disabled>
                   <SelectTrigger id="country">
                     <SelectValue placeholder="Select a country" />
                   </SelectTrigger>
@@ -263,16 +220,9 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact">Contact No.</Label>
-                <Input id="contact" value={editedProfile.contact} onChange={(e) => handleProfileChange('contact', e.target.value)} disabled={!isEditing} />
+                <Input id="contact" value={profile.contact} disabled />
               </div>
             </CardContent>
-            <CardFooter>
-              {isEditing ? (
-                <Button onClick={handleSaveProfile} className="w-full">Save Changes</Button>
-              ) : (
-                <Button variant="outline" onClick={() => setIsEditing(true)} className="w-full">Edit Profile</Button>
-              )}
-            </CardFooter>
           </Card>
 
           <Card>
