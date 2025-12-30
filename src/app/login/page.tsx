@@ -93,16 +93,27 @@ export default function LoginPage() {
       toast({ title: 'Login successful!' });
       router.push('/');
     } catch (error: any) {
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+      // Firebase returns 'auth/invalid-credential' for both user-not-found and wrong-password.
+      // There isn't a perfect way to distinguish, so this logic prioritizes creating a user
+      // if the login fails, which is good for a demo but might be changed in production.
+      if (error.code === 'auth/invalid-credential') {
         try {
+          // Attempt to sign up the user
           await createUserWithEmailAndPassword(auth, email, password);
           toast({ title: 'New account created and logged in!' });
           router.push('/');
         } catch (signupError: any) {
-          console.error('Auto sign-up error:', signupError);
-          toast({ variant: 'destructive', title: 'Login and Sign-up failed.', description: signupError.message });
+           // If signup fails because the email is already in use, it means the password was wrong.
+          if (signupError.code === 'auth/email-already-in-use') {
+             toast({ variant: 'destructive', title: 'Login failed.', description: 'Invalid password. Please try again.' });
+          } else {
+             // Handle other potential signup errors
+             console.error('Auto sign-up error:', signupError);
+             toast({ variant: 'destructive', title: 'Login and Sign-up failed.', description: signupError.message });
+          }
         }
       } else {
+        // Handle other login errors like network issues, etc.
         console.error('Login error:', error);
         toast({ variant: 'destructive', title: 'Login failed.', description: error.message });
       }
