@@ -93,8 +93,7 @@ export default function LoginPage() {
       toast({ title: 'Login successful!' });
       router.push('/');
     } catch (error: any) {
-      // If login fails because the user doesn't exist, try signing them up.
-      if (error.code === AuthErrorCodes.INVALID_credential || error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
         try {
           await createUserWithEmailAndPassword(auth, email, password);
           toast({ title: 'New account created and logged in!' });
