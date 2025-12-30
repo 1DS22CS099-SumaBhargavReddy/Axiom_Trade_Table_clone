@@ -1,7 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,10 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRouter } from 'next/navigation';
+import type { UserProfile } from '@/lib/types';
 
 const countries = [
   { code: 'IN', name: 'India' },
@@ -118,19 +119,59 @@ const PaymentDialog = ({ amount, onPaymentSuccess }: { amount: string; onPayment
 
 
 export default function ProfilePage() {
-  const { profile, usdBalance, addFunds, isConnected, isUserLoading } = useWallet();
+  const { profile, usdBalance, addFunds, updateProfile, isConnected, isUserLoading } = useWallet();
   const { currency, conversionRate } = useCurrency();
   const { toast } = useToast();
   const router = useRouter();
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [editableProfile, setEditableProfile] = useState<UserProfile | null>(null);
   const [amountToAdd, setAmountToAdd] = useState('');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isUserLoading && !isConnected) {
       router.push('/login');
     }
+    if (profile) {
+      setEditableProfile(profile);
+    }
   }, [isConnected, isUserLoading, router, profile]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setEditableProfile(prev => prev ? { ...prev, [id]: value } : null);
+  };
+  
+  const handleCountryChange = (value: string) => {
+    setEditableProfile(prev => prev ? { ...prev, country: value } : null);
+  };
+
+  const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setEditableProfile(prev => prev ? { ...prev, profilePic: dataUrl } : null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    if (editableProfile) {
+      updateProfile(editableProfile);
+      toast({ title: 'Profile Updated', description: 'Your profile has been successfully updated.' });
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditableProfile(profile);
+    setIsEditing(false);
+  };
 
   const handleInitiateAddFunds = () => {
     const amount = parseFloat(amountToAdd);
@@ -149,7 +190,7 @@ export default function ProfilePage() {
     setIsPaymentDialogOpen(false);
   };
   
-  if (isUserLoading || !isConnected || !profile) {
+  if (isUserLoading || !isConnected || !editableProfile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-md text-center">
@@ -188,28 +229,50 @@ export default function ProfilePage() {
 
         <main className="grid gap-8 md:grid-cols-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Your Profile</CardTitle>
-              <CardDescription>View your personal information.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Your Profile</CardTitle>
+                <CardDescription>View and edit your personal information.</CardDescription>
+              </div>
+               {!isEditing && (
+                <Button variant="outline" size="icon" onClick={() => setIsEditing(true)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={profile.profilePic} alt={profile.name} />
-                  <AvatarFallback>{profile.name?.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={editableProfile.profilePic} alt={editableProfile.name} />
+                  <AvatarFallback>{editableProfile.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
+                {isEditing && (
+                  <>
+                    <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="mr-2 h-4 w-4"/>
+                      Upload Picture
+                    </Button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handlePictureUpload}
+                      className="hidden" 
+                      accept="image/*"
+                    />
+                  </>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" value={profile.name} disabled />
+                <Input id="name" value={editableProfile.name} disabled={!isEditing} onChange={handleInputChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={profile.email} disabled />
+                <Input id="email" type="email" value={editableProfile.email} disabled />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Select value={profile.country} disabled>
+                <Select value={editableProfile.country} disabled={!isEditing} onValueChange={handleCountryChange}>
                   <SelectTrigger id="country">
                     <SelectValue placeholder="Select a country" />
                   </SelectTrigger>
@@ -220,9 +283,15 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact">Contact No.</Label>
-                <Input id="contact" value={profile.contact} disabled />
+                <Input id="contact" value={editableProfile.contact} disabled={!isEditing} onChange={handleInputChange} />
               </div>
             </CardContent>
+            {isEditing && (
+              <CardFooter className="flex justify-end gap-2">
+                <Button variant="ghost" onClick={handleCancelEdit}>Cancel</Button>
+                <Button onClick={handleSaveChanges}>Save Changes</Button>
+              </CardFooter>
+            )}
           </Card>
 
           <Card>
