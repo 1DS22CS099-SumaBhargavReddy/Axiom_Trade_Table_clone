@@ -19,7 +19,8 @@ import {
   GoogleAuthProvider, 
   signInWithPopup, 
   createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword 
+  signInWithEmailAndPassword,
+  AuthErrorCodes
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -91,9 +92,21 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Login successful!' });
       router.push('/');
-    } catch (error) {
-      console.error('Login error:', error);
-      toast({ variant: 'destructive', title: 'Login failed.', description: (error as Error).message });
+    } catch (error: any) {
+      // If login fails because the user doesn't exist, try signing them up.
+      if (error.code === AuthErrorCodes.INVALID_credential || error.code === 'auth/user-not-found') {
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          toast({ title: 'New account created and logged in!' });
+          router.push('/');
+        } catch (signupError: any) {
+          console.error('Auto sign-up error:', signupError);
+          toast({ variant: 'destructive', title: 'Login and Sign-up failed.', description: signupError.message });
+        }
+      } else {
+        console.error('Login error:', error);
+        toast({ variant: 'destructive', title: 'Login failed.', description: error.message });
+      }
     }
   };
 
