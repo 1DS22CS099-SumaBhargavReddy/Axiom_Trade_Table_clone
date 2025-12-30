@@ -43,4 +43,5 @@ export interface WalletContextType {
   executeTrade: (tokenId: string, amount: number, action: 'buy' | 'sell') => void;
   updateProfile: (newProfile: Partial<UserProfile>) => void;
   addFunds: (amount: number) => void;
+  createProfile: (userId: string) => Promise<void>;
 }

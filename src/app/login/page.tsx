@@ -20,9 +20,9 @@ import {
   signInWithPopup, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword,
-  AuthErrorCodes
 } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useWallet } from '@/hooks/use-wallet';
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -56,6 +56,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const auth = useAuth();
+  const { createProfile } = useWallet();
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('demo@example.com');
@@ -65,7 +66,8 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      await createProfile(result.user.uid);
       toast({ title: 'Successfully signed in with Google!' });
       router.push('/');
     } catch (error) {
@@ -77,9 +79,10 @@ export default function LoginPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      // The useWallet effect will handle profile creation
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await createProfile(result.user.uid);
       toast({ title: 'Sign up successful!', description: 'You can now log in.' });
+      router.push('/');
     } catch (error) {
       console.error('Sign up error:', error);
       toast({ variant: 'destructive', title: 'Sign up failed.', description: (error as Error).message });
@@ -93,27 +96,21 @@ export default function LoginPage() {
       toast({ title: 'Login successful!' });
       router.push('/');
     } catch (error: any) {
-      // Firebase returns 'auth/invalid-credential' for both user-not-found and wrong-password.
-      // There isn't a perfect way to distinguish, so this logic prioritizes creating a user
-      // if the login fails, which is good for a demo but might be changed in production.
       if (error.code === 'auth/invalid-credential') {
         try {
-          // Attempt to sign up the user
-          await createUserWithEmailAndPassword(auth, email, password);
+          const result = await createUserWithEmailAndPassword(auth, email, password);
+          await createProfile(result.user.uid);
           toast({ title: 'New account created and logged in!' });
           router.push('/');
         } catch (signupError: any) {
-           // If signup fails because the email is already in use, it means the password was wrong.
           if (signupError.code === 'auth/email-already-in-use') {
              toast({ variant: 'destructive', title: 'Login failed.', description: 'Invalid password. Please try again.' });
           } else {
-             // Handle other potential signup errors
              console.error('Auto sign-up error:', signupError);
              toast({ variant: 'destructive', title: 'Login and Sign-up failed.', description: signupError.message });
           }
         }
       } else {
-        // Handle other login errors like network issues, etc.
         console.error('Login error:', error);
         toast({ variant: 'destructive', title: 'Login failed.', description: error.message });
       }

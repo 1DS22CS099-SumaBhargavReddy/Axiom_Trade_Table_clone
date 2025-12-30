@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { initialTokens } from '@/lib/data';
 import type { WalletContextType, UserProfile } from '@/lib/types';
-import { useAuth, useFirestore, useUser } from '@/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -18,6 +18,22 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [tokenBalances, setTokenBalances] = useState<Record<string, number>>({});
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
+  const createProfile = useCallback(async (userId: string) => {
+    if (!firestore || !auth.currentUser) return;
+    const userDocRef = doc(firestore, 'users', userId);
+    // Create a default profile
+    const defaultProfile: UserProfile = {
+        id: userId,
+        name: auth.currentUser.displayName || 'New User',
+        email: auth.currentUser.email || '',
+        profilePic: auth.currentUser.photoURL || `https://i.pravatar.cc/150?u=${userId}`,
+        country: 'IN',
+        contact: '',
+    };
+    await setDoc(userDocRef, defaultProfile);
+    setProfile(defaultProfile);
+  }, [firestore, auth.currentUser]);
+
   const fetchProfile = useCallback(async (userId: string) => {
     if (!firestore) return;
     const userDocRef = doc(firestore, 'users', userId);
@@ -25,23 +41,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (userDoc.exists()) {
       setProfile(userDoc.data() as UserProfile);
     } else {
-        // Create a default profile if it doesn't exist
-        const defaultProfile: UserProfile = {
-            id: userId,
-            name: auth.currentUser?.displayName || 'New User',
-            email: auth.currentUser?.email || '',
-            profilePic: auth.currentUser?.photoURL || `https://i.pravatar.cc/150?u=${userId}`,
-            country: 'IN',
-            contact: '',
-        };
-        await setDoc(userDocRef, defaultProfile);
-        setProfile(defaultProfile);
+        await createProfile(userId);
     }
-  }, [firestore, auth.currentUser]);
+  }, [firestore, createProfile]);
 
 
   useEffect(() => {
-    if (user) {
+    if (user && firestore) {
       fetchProfile(user.uid);
       setUsdBalance(10000); // Mock balance on login
       const initialBalances: Record<string, number> = {};
@@ -58,7 +64,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       setUsdBalance(0);
       setTokenBalances({});
     }
-  }, [user, fetchProfile]);
+  }, [user, firestore, fetchProfile]);
 
   const disconnect = useCallback(async () => {
     if (!auth) return;
@@ -93,10 +99,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [usdBalance, tokenBalances]);
 
-  const updateProfile = useCallback(async (newProfileData: Partial<UserProfile>) => {
+  const updateProfile = useCallback((newProfileData: Partial<UserProfile>) => {
     if (!user || !firestore) return;
     const userDocRef = doc(firestore, 'users', user.uid);
-    await setDoc(userDocRef, newProfileData, { merge: true });
+    setDocumentNonBlocking(userDocRef, newProfileData, { merge: true });
     setProfile(prev => ({ ...prev!, ...newProfileData }));
   }, [user, firestore]);
 
@@ -116,7 +122,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         disconnect, 
         executeTrade, 
         updateProfile, 
-        addFunds 
+        addFunds,
+        createProfile,
     }}>
       {children}
     </WalletContext.Provider>

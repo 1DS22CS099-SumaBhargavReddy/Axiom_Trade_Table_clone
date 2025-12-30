@@ -2,46 +2,52 @@
  * This ruleset governs access to the Firestore database for a token trading application.
  *
  * Core Philosophy:
- * The security model is designed to treat token data as public, read-only information for all clients.
- * This allows any user, authenticated or not, to view real-time token prices, volumes, and other market data.
- * To protect data integrity, all client-side write operations (create, update, delete) are explicitly forbidden.
- * Data updates are expected to be performed by a trusted backend service or administrative process, not directly by end-users.
+ * - Public token data is read-only for all clients to ensure data integrity.
+ * - User profile data is private and can only be modified by the owner.
  *
  * Data Structure:
- * The data is organized into a single, top-level collection:
- * - /tokens/{tokenId}: Stores all public information about a specific trading token.
- *
- * Key Security Decisions:
- * - Public Read Access: The `/tokens` collection is publicly readable to support the primary function of displaying market data to all users without requiring them to sign in.
- * - Client-Side Writes Disabled: To prevent malicious or accidental data corruption, no client is permitted to create, update, or delete token documents. This enforces the principle that public data integrity must be maintained by a secure, server-side process.
- * - No User-Specific Data: The ruleset assumes there is no user-owned or private data within the defined collections.
- *
- * Denormalization for Authorization:
- * This principle is not applicable to this ruleset as there are no user-specific authorization checks. All data is treated as public.
- *
- * Structural Segregation:
- * This principle is not applicable as all data is public and of a single type, so there is no need to segregate public from private content.
+ * - /tokens/{tokenId}: Public information about a specific trading token.
+ * - /users/{userId}: Private user profile information, linked to their authentication UID.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows public read access for all token data but denies all client-side writes to maintain data integrity.
-     * @path        /tokens/{tokenId}
-     * @allow       Any user, signed-in or anonymous, can read a token document. (e.g., `db.collection('tokens').doc('BTC').get()`).
-     * @deny        Any user attempting to update a token's price is denied. (e.g., `db.collection('tokens').doc('BTC').update({ price: ... })`).
-     * @principle   Protects public data integrity by making it read-only for clients. Updates must be handled by a trusted backend environment.
+     * @description Allows public read access for all token data but denies all client-side writes.
      */
     match /tokens/{tokenId} {
       allow get: if true;
       allow list: if true;
 
-      // Writes are disabled. Token data should only be updated by a trusted backend service
-      // to ensure data integrity and prevent market manipulation.
+      // Writes are disabled. Token data should only be updated by a trusted backend service.
       allow create: if false;
       allow update: if false;
       allow delete: if false;
+    }
+
+    /**
+     * @description Secures user profile data.
+     * @path        /users/{userId}
+     * @allow       A user can read, create, and update their own profile document.
+     * @deny        A user cannot access or modify another user's profile.
+     * @principle   Enforces data ownership and privacy.
+     */
+    match /users/{userId} {
+      // Users can get their own profile
+      allow get: if request.auth != null && request.auth.uid == userId;
+
+      // Users can create their own profile, but not for another user.
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Users can update their own profile.
+      allow update: if request.auth != null && request.auth.uid == userId;
+      
+      // Users cannot be deleted from the client.
+      allow delete: if false;
+
+      // Listing all users is not allowed.
+      allow list: if false;
     }
   }
 }
